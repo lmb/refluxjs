@@ -16,14 +16,15 @@ module.exports = {
      *
      * @param {Action|Store} listenable An Action or Store that should be
      *  listened to.
-     * @param {Function} callback The callback to register as event handler
-     * @param {Function} defaultCallback The callback to register as default handler
+     * @param {Function} success The callback to register as event handler
+     * @param {Function} [optional] pending The callback to register as pending handler if the listenable supports it
+     * @param {Function} [optional] failure The callback to register as failure handler if the listenable supports it
      */
-    listenTo: function(listenable, callback, defaultCallback) {
-        var unsubscribe = listenable.listen(callback, this);
+    listenTo: function(listenable, success, failure, pending) {
+        var unsubscribe = listenable.listen(success, this, failure, pending);
         this.subscriptions.push(unsubscribe);
 
-        _.handleDefaultCallback(this, listenable, defaultCallback);
+        _.handleDefaultCallback(this, listenable, success);
     },
 
     componentWillUnmount: function() {

@@ -1,20 +1,44 @@
 var _ = require('./utils');
 
+function bindCallback(callback, bindContext) {
+    return function(args) {
+        callback.apply(bindContext, args);
+    };
+}
+
+function alwaysSucceed() {
+    this.success.apply(null, arguments);
+}
+
 /**
  * Creates an action functor object
  */
-module.exports = function() {
-
-    var action = new _.EventEmitter(),
-        eventLabel = "action",
+module.exports = function(action) {
+    var emitter = new _.EventEmitter(),
         functor;
+
+    var events = {
+        pending: function() {
+            emitter.emit("pending", arguments);
+        },
+        success: function() {
+            emitter.emit("success", arguments);
+        },
+        failure: function() {
+            emitter.emit("failure", arguments);
+        }
+    };
+
+    if (typeof action === "undefined") {
+        action = alwaysSucceed;
+    }
 
     functor = function() {
         var args = arguments;
         _.nextTick(function() {
             functor.preEmit.apply(functor, args);
             if (functor.shouldEmit.apply(functor, args)) {
-                action.emit(eventLabel, args);
+                action.apply(events, args);
             }
         });
     };
@@ -22,18 +46,37 @@ module.exports = function() {
     /**
      * Subscribes the given callback for action triggered
      *
-     * @param {Function} callback The callback to register as event handler
+     * @param {Function} success The callback to register as event handler
      * @param {Mixed} [optional] bindContext The context to bind the callback with
+     * @param {Function} [optional] pending The pending callback for actions that emit such events
+     * @param {Function} [optional] failure The failure callback for actions that emit such events
      * @returns {Function} Callback that unsubscribes the registered event handler
      */
-    functor.listen = function(callback, bindContext) {
-        var eventHandler = function(args) {
-            callback.apply(bindContext, args);
+    functor.listen = function(success, bindContext, failure, pending) {
+        var handlers = {
+            success: bindCallback(success, bindContext)
         };
-        action.addListener(eventLabel, eventHandler);
+
+        if (typeof pending !== "undefined") {
+            handlers.pending = bindCallback(success, bindContext);
+        }
+
+        if (typeof failure !== "undefined") {
+            handlers.failure = bindCallback(failure, bindContext);
+        }
+
+        for (var key in handlers) {
+            if (handlers.hasOwnProperty(key)) {
+                emitter.addListener(key, handlers[key]);
+            }
+        }
 
         return function() {
-            action.removeListener(eventLabel, eventHandler);
+            for (var key in handlers) {
+                if (handlers.hasOwnProperty(key)) {
+                    emitter.removeListener(key, handlers[key]);
+                }
+            }
         };
     };
 

@@ -16,7 +16,7 @@ module.exports = function(definition) {
         }
     }
     _.extend(Store.prototype, definition);
-    Store.prototype.listenTo = function(listenable, callback, defaultCallback) {
+    Store.prototype.listenTo = function(listenable, success, failure, pending) {
         if (listenable === this) {
             throw Error("Store is not able to listen to itself");
         }
@@ -26,9 +26,9 @@ module.exports = function(definition) {
         if (this.hasListener(listenable)) {
             throw Error("Store cannot listen to this listenable because of circular loop");
         }
-        _.handleDefaultCallback(this, listenable, defaultCallback);
+        _.handleDefaultCallback(this, listenable, success);
         this.registered.push(listenable);
-        var unsubscribe = listenable.listen(callback, this);
+        var unsubscribe = listenable.listen(success, this, failure, pending);
         var self = this;
         return function () {
             unsubscribe();
