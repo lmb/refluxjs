@@ -1,11 +1,5 @@
 var _ = require('./utils');
 
-function bindCallback(callback, bindContext) {
-    return function(args) {
-        callback.apply(bindContext, args);
-    };
-}
-
 function alwaysSucceed() {
     this.success.apply(null, arguments);
 }
@@ -54,15 +48,15 @@ module.exports = function(action) {
      */
     functor.listen = function(success, bindContext, failure, pending) {
         var handlers = {
-            success: bindCallback(success, bindContext)
+            success: _.bindCallback(success, bindContext)
         };
 
         if (typeof pending !== "undefined") {
-            handlers.pending = bindCallback(success, bindContext);
+            handlers.pending = _.bindCallback(success, bindContext);
         }
 
         if (typeof failure !== "undefined") {
-            handlers.failure = bindCallback(failure, bindContext);
+            handlers.failure = _.bindCallback(failure, bindContext);
         }
 
         for (var key in handlers) {

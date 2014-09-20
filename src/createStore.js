@@ -36,9 +36,7 @@ module.exports = function(definition) {
         };
     };
     Store.prototype.listen = function(callback, bindContext) {
-        var eventHandler = function(args) {
-            callback.apply(bindContext, args);
-        };
+        var eventHandler = _.bindCallback(callback, bindContext);
         eventHandler.l = callback;
         store.addListener(eventLabel, eventHandler);
 

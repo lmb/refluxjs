@@ -45,3 +45,13 @@ exports.handleDefaultCallback = function (listener, listenable, defaultCallback)
         }
     }
 };
+
+exports.bindCallback = function (callback, bindContext) {
+    if (!isFunction(callback)) {
+        throw new Error("Callback has to be a function");
+    }
+
+    return function(args) {
+        callback.apply(bindContext, args);
+    };
+};
