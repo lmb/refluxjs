@@ -1,6 +1,18 @@
 var _ = require('./utils');
-module.exports = {
 
+function bindToComponent(callback, component) {
+    if (typeof callback === 'undefined') {
+        return undefined;
+    }
+
+    return function() {
+        if (component.isMounted()) {
+            callback.apply(null, arguments);
+        }
+    };
+}
+
+module.exports = {
     /**
      * Set up the mixin before the initial rendering occurs. Event listeners
      * and callbacks should be registered once the component successfully
@@ -21,7 +33,13 @@ module.exports = {
      * @param {Function} [optional] failure The callback to register as failure handler if the listenable supports it
      */
     listenTo: function(listenable, success, failure, pending) {
-        var unsubscribe = listenable.listen(success, this, failure, pending);
+        var unsubscribe = listenable.listen(
+            bindToComponent(success, this),
+            null,
+            bindToComponent(failure, this),
+            bindToComponent(pending, this)
+        );
+
         this.subscriptions.push(unsubscribe);
 
         _.handleDefaultCallback(this, listenable, success);

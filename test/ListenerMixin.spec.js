@@ -14,7 +14,9 @@ describe('Managing subscriptions via ListenerMixin', function() {
     beforeEach(function() {
       // simulate ReactJS component instantiation and mounting
       component = Object.create(Reflux.ListenerMixin);
+      component.isMounted = function() { return this.mounted; };
       component.componentWillMount();
+      component.mounted = true;
 
       action = Reflux.createAction();
 
@@ -39,8 +41,25 @@ describe('Managing subscriptions via ListenerMixin', function() {
 
     describe('when unmounting', function() {
 
+        it('actions should not update state', function(done) {
+            component.mounted = false;
+
+            var resolved = false;
+            promise.then(function() {
+                resolved = true;
+            });
+
+            action(1337, 'ninja');
+
+            setTimeout(function() {
+                assert.equal(resolved, false);
+                done();
+            }, 200);
+        });
+
         beforeEach(function() {
             component.componentWillUnmount();
+            component.mounted = false;
         });
 
         it('the component should unsubscribe', function(done) {
@@ -68,7 +87,7 @@ describe('Managing subscriptions via ListenerMixin', function() {
                 var setData = function () {
                     resolve(Array.prototype.slice.call(arguments, 0));
                 };
-                component.listenTo(store, setData, setData);
+                component.listenTo(store, setData);
             });
         }
         it('should get default data from getDefaultData()', function () {
